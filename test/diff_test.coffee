@@ -14,8 +14,18 @@ describe 'diff', ->
     it "should return undefined for two identical strings", ->
       assert.deepEqual undefined, diff("foo", "foo")
 
+    it "should return undefined for two identical dates", ->
+      date = new Date()
+      assert.deepEqual undefined, diff(date, date)
+
     it "should return { __old: <old value>, __new: <new value> } object for two different numbers", ->
       assert.deepEqual { __old: 42, __new: 10 }, diff(42, 10)
+
+    it "should return { __old: <old value>, __new: <new value> } object for two different dates", ->
+      oldDate = new Date()
+      newDate = new Date()
+      newDate.setFullYear(oldDate.getFullYear()-4)
+      assert.deepEqual { __old: oldDate, __new: newDate }, diff(oldDate, newDate)
 
   describe 'with objects', ->
 
@@ -78,7 +88,7 @@ describe 'diff', ->
       assert.deepEqual [[' '], ['+', { foo: 20 }], [' ']], diff([{ foo: 10 }, { foo: 30 }], [{ foo: 10 }, { foo: 20 }, { foo: 30 }])
 
     it "should return [['+', <added item>], ..., ['+', <added item>]] for two arrays containing objects of 3 or more properties when the second array has extra values (fixes issue #57)", ->
-      assert.deepEqual([ [ "+", { "key1": "b", "key2": "1", "key3": "m" } ], [ " " ], [ "+", { "key1": "c", "key2": "1", "key3": "dm" } ]], 
+      assert.deepEqual([ [ "+", { "key1": "b", "key2": "1", "key3": "m" } ], [ " " ], [ "+", { "key1": "c", "key2": "1", "key3": "dm" } ]],
                         diff([ { "key1": "a", "key2": "12", "key3": "cm" } ], [ { "key1": "b", "key2": "1", "key3": "m" }, { "key1": "a", "key2": "12", "key3": "cm" }, { "key1": "c", "key2": "1", "key3": "dm" } ])
       )
 
@@ -86,23 +96,23 @@ describe 'diff', ->
       assert.deepEqual [[' '],[ '+', { name: 'Foo', a: 3, b: 1, c: 1 }], [' ']], diff([{ "name": "Foo", "a": 3, "b": 1 },{ foo: 10 }], [{ "name": "Foo", "a": 3, "b": 1 },{ "name": "Foo", "a": 3, "b": 1, "c": 1 },{ foo: 10 }])
 
     it "should return [..., ['~', <diff>], ...] for two arrays when an item has been modified", ->
-      assert.deepEqual( [[' '], ['~', { foo: { __old: 20, __new: 21 } }], [' ']], 
-                          diff([{ foo: 10, bar: { bbbar: 10, bbboz: 11 } }, 
-                                { foo: 20, bar: { bbbar: 50, bbboz: 25 } }, 
-                                { foo: 30, bar: { bbbar: 92, bbboz: 34 } }], 
-                               [{ foo: 10, bar: { bbbar: 10, bbboz: 11 } }, 
-                                { foo: 21, bar: { bbbar: 50, bbboz: 25 } }, 
+      assert.deepEqual( [[' '], ['~', { foo: { __old: 20, __new: 21 } }], [' ']],
+                          diff([{ foo: 10, bar: { bbbar: 10, bbboz: 11 } },
+                                { foo: 20, bar: { bbbar: 50, bbboz: 25 } },
+                                { foo: 30, bar: { bbbar: 92, bbboz: 34 } }],
+                               [{ foo: 10, bar: { bbbar: 10, bbboz: 11 } },
+                                { foo: 21, bar: { bbbar: 50, bbboz: 25 } },
                                 { foo: 30, bar: { bbbar: 92, bbboz: 34 } }])
       )
 
   describe 'with reported bugs', ->
 
     it "should handle type mismatch during scalarize", ->
-      assert.deepEqual( { "s": [ [ "~", [ [ "~", { "b": { "__old": "123", "__new": "abc" } } ] ] ], [ "+", [] ] ] },  
+      assert.deepEqual( { "s": [ [ "~", [ [ "~", { "b": { "__old": "123", "__new": "abc" } } ] ] ], [ "+", [] ] ] },
                         diff({"s": [[{ "b": "123" }]]}, {"s": [[{ "b": "abc" }], []]} ) )
-      
+
     it "should handle mixed scalars and non-scalars in scalarize", ->
-      assert.deepEqual( undefined,  
+      assert.deepEqual( undefined,
                         diff(["a", {"foo": "bar"}, {"foo": "bar"}], ["a", {"foo": "bar"}, {"foo": "bar"}] ) )
 
 describe 'diff({sort: true})', ->
@@ -147,7 +157,7 @@ describe 'diff({full: true})', ->
 
     it "should return { <key>: { __old: <old value>, __new: <new value> } } for two objects with different scalar values for a key", ->
       assert.deepEqual { foo: { __old: 42, __new: 10 } }, diff({ foo: 42 }, { foo: 10 }, {full: true})
-      
+
     it "should return { <key>: <diff>, <equal properties> } with a recursive diff for two objects with different values for a key", ->
       assert.deepEqual { foo: 42, bar: { bbbar: { __old: 10, __new: 12 } } }, diff({ foo: 42, bar: { bbbar: 10 }}, { foo: 42, bar: { bbbar: 12 }}, {full: true})
 
@@ -195,14 +205,14 @@ describe 'diff({full: true})', ->
       assert.deepEqual [ [ " ", { "name": "Foo", "a": 3, "b": 1 } ], [ "+", { "name": "Foo", "a": 3, "b": 1, "c": 1 } ], [ " ", { "foo": 10 } ] ], diff([{ "name": "Foo", "a": 3, "b": 1 },{ "foo": 10 }], [{ "name": "Foo", "a": 3, "b": 1 },{ "name": "Foo", "a": 3, "b": 1, "c": 1 },{ "foo": 10 }], {full: true})
 
     it "should return [[' ', <unchanged item>], ['~', <diff>], [' ', <unchanged item>]] for two arrays when an item has been modified", ->
-      assert.deepEqual( [ [ " ", { "foo": 10, "bar": { "bbbar": 10, "bbboz": 11 } } ], 
-                          [ "~", { "foo": { "__old": 20, "__new": 21 }, "bar": { "bbbar": 50, "bbboz": 25 } } ], 
-                          [ " ", { "foo": 30, "bar": { "bbbar": 92, "bbboz": 34 } } ] ], 
-                          diff([{ foo: 10, bar: { bbbar: 10, bbboz: 11 } }, 
-                                { foo: 20, bar: { bbbar: 50, bbboz: 25 } }, 
-                                { foo: 30, bar: { bbbar: 92, bbboz: 34 } }], 
-                               [{ foo: 10, bar: { bbbar: 10, bbboz: 11 } }, 
-                                { foo: 21, bar: { bbbar: 50, bbboz: 25 } }, 
+      assert.deepEqual( [ [ " ", { "foo": 10, "bar": { "bbbar": 10, "bbboz": 11 } } ],
+                          [ "~", { "foo": { "__old": 20, "__new": 21 }, "bar": { "bbbar": 50, "bbboz": 25 } } ],
+                          [ " ", { "foo": 30, "bar": { "bbbar": 92, "bbboz": 34 } } ] ],
+                          diff([{ foo: 10, bar: { bbbar: 10, bbboz: 11 } },
+                                { foo: 20, bar: { bbbar: 50, bbboz: 25 } },
+                                { foo: 30, bar: { bbbar: 92, bbboz: 34 } }],
+                               [{ foo: 10, bar: { bbbar: 10, bbboz: 11 } },
+                                { foo: 21, bar: { bbbar: 50, bbboz: 25 } },
                                 { foo: 30, bar: { bbbar: 92, bbboz: 34 } }], {full: true})
       )
 
