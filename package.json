@@ -7,10 +7,12 @@
   "homepage": "https://github.com/freshfx/json-diff",
   "license": "MIT",
   "repository": {
-    "url": "git@github.com:freshfx/json-diff.git"
+    "url": "git+ssh://git@github.com/freshfx/json-diff.git"
   },
   "main": "lib/index.js",
-  "bin": "bin/json-diff.js",
+  "bin": {
+    "json-diff": "bin/json-diff.js"
+  },
   "scripts": {
     "fix": "eslint --fix lib",
     "test": "coffee -c test; mocha test/*.js",
