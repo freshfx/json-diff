@@ -5,3 +5,7 @@
 /lib-cov
 coverage.html
 yarn.lock
+.vscode
+.idea
+.eslintrc.js
+.nvmrc
